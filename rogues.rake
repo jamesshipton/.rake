@@ -1,6 +1,8 @@
 require 'open-uri'
 require 'nokogiri'
 
+require_relative 'download'
+
 desc 'Download all the ruby rogues podcasts to the current directory'
 namespace :rogues do
   task :download do
@@ -16,43 +18,38 @@ module Rogues
       end
     end
 
+    def get(url)
+      open(url).read
+    end
+
     private
     def episode_links
       episodes_guide_doc.css('.format_text>p>a')
     end
 
     def episodes_guide_doc
-      Nokogiri::HTML open('http://rubyrogues.com/episode-guide/')
+      Nokogiri::HTML Rogues.get('http://rubyrogues.com/episode-guide/')
     end
   end
 
   Episode = Struct.new(:page_link, :name) do
     def download
-      if downloaded?
-        puts "Already downloaded #{mp3_filename}"
-      else
-        File.open(mp3_filename, 'w:binary') do |f|
-          puts "Downloading #{mp3_link} to #{f.path}"
-          f << open(mp3_link).read
-        end
+      Download.fetch(filename, url) do
+        Rogues.get(url)
       end
     end
 
     private
-    def downloaded?
-      File.size? mp3_filename
+    def url
+      @url ||= episode_doc.css('[title=Download]').first['href']
     end
 
-    def mp3_link
-      @mp3_link ||= episode_doc.css('[title=Download]').first['href']
-    end
-
-    def mp3_filename
-      @mp3_filename ||= "#{name.scan(/[a-zA-Z0-9\s]/).join.gsub(/[\s]+/, '-').downcase}.mp3"
+    def filename
+      @filename ||= "#{name.scan(/[a-zA-Z0-9\s]/).join.gsub(/[\s]+/, '-').downcase}.mp3"
     end
 
     def episode_doc
-      Nokogiri::HTML open(page_link)
+      Nokogiri::HTML Rogues.get(page_link)
     end
   end
 end

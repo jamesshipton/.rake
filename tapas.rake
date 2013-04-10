@@ -17,7 +17,7 @@ module Tapas
       end
     end
 
-    def response(url)
+    def get(url)
       uri = URI(url)
 
       http = Net::HTTP.new(uri.host, uri.port)
@@ -37,39 +37,18 @@ module Tapas
     end
 
     def episodes_feed_doc
-      Nokogiri::XML response('https://rubytapas.dpdcart.com/feed')
+      Nokogiri::XML Tapas.get('https://rubytapas.dpdcart.com/feed')
     end
   end
 
   Episode = Struct.new(:title, :url) do
     def download
-      tries = 0
-
-      begin
-        tries += 0
-          if downloaded?
-            puts "Already downloaded #{filename}"
-          else
-            File.open(filename, 'w:binary') do |f|
-              puts "Downloading #{url} to #{f.path}"
-              f << Tapas.response(url)
-            end
-          end
-      rescue Timeout::Error
-        if tries < 5
-          puts "problem downloading #{url}....retrying"
-          retry
-        else
-          puts "problem downloading #{url}....giving up"
-        end
+      Download.fetch(filename, url) do
+        Tapas.get(url)
       end
     end
 
     private
-    def downloaded?
-      File.size? filename
-    end
-
     def filename
       @filename ||= "#{title.scan(/[a-zA-Z0-9\s]/).join.gsub(/[\s]+/, '-').downcase}.mp4"
     end
