@@ -1,3 +1,11 @@
+require 'open-uri'
+require 'nokogiri'
+
+require_relative 'download/benji'
+require_relative 'download/tapas'
+require_relative 'download/rogues'
+require_relative 'download/vimcasts'
+
 module Download
   class << self
     def fetch(filename, url, &block)

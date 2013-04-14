@@ -1,13 +1,5 @@
 require 'net/http'
 require 'uri'
-require 'nokogiri'
-
-desc 'Download all the ruby tapas episodes to the current directory'
-namespace :tapas do
-  task :download do
-    Tapas.episodes.each(&:download)
-  end
-end
 
 module Tapas
   class << self
@@ -37,20 +29,20 @@ module Tapas
     end
 
     def episodes_feed_doc
-      Nokogiri::XML Tapas.get('https://rubytapas.dpdcart.com/feed')
+      Nokogiri::XML get('https://rubytapas.dpdcart.com/feed')
     end
-  end
 
-  Episode = Struct.new(:title, :url) do
-    def download
-      Download.fetch(filename, url) do
-        Tapas.get(url)
+    Episode = Struct.new(:title, :url) do
+      def download
+        Download.fetch(filename, url) do
+          Tapas.get(url)
+        end
       end
-    end
 
-    private
-    def filename
-      @filename ||= "#{title.scan(/[a-zA-Z0-9\s]/).join.gsub(/[\s]+/, '-').downcase}.mp4"
+      private
+      def filename
+        @filename ||= "#{title.scan(/[a-zA-Z0-9\s]/).join.gsub(/[\s]+/, '-').downcase}.mp4"
+      end
     end
   end
 end
